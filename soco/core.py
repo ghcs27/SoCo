@@ -140,9 +140,6 @@ class SoCo(_SocoSingletonBase):
         add_to_queue
         remove_from_queue
         clear_queue
-        get_favorite_radio_shows
-        get_favorite_radio_stations
-        get_sonos_favorites
         create_sonos_playlist
         create_sonos_playlist_from_queue
         remove_sonos_playlist
@@ -1322,6 +1319,7 @@ class SoCo(_SocoSingletonBase):
             ('InstanceID', 0),
         ])
 
+    @deprecated('0.13', "soco.music_library.get_favorite_radio_shows", '0.15')
     def get_favorite_radio_shows(self, start=0, max_items=100):
         """Get favorite radio shows from Sonos' Radio app.
 
@@ -1340,6 +1338,7 @@ class SoCo(_SocoSingletonBase):
         warnings.warn(message, stacklevel=2)
         return self.__get_favorites(RADIO_SHOWS, start, max_items)
 
+    @deprecated('0.13', "soco.music_library.get_favorite_radio_stations", '0.15')
     def get_favorite_radio_stations(self, start=0, max_items=100):
         """Get favorite radio stations from Sonos' Radio app.
 
@@ -1358,6 +1357,7 @@ class SoCo(_SocoSingletonBase):
         warnings.warn(message, stacklevel=2)
         return self.__get_favorites(RADIO_STATIONS, start, max_items)
 
+    @deprecated('0.13', "soco.music_library.get_sonos_favorites", '0.15')
     def get_sonos_favorites(self, start=0, max_items=100):
         """Get Sonos favorites.
 
