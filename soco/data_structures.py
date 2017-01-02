@@ -1028,6 +1028,13 @@ class DidlMusicGenre(DidlGenre):
     tag = 'item'
 
 
+class DidlRadioShow(DidlContainer):
+    """Class that represents a radio show."""
+
+    # the DIDL Lite class for this object.
+    item_class = 'object.container.radioShow'
+    # A radio show doesn't seem to have any special attributes
+
 ###############################################################################
 # SPECIAL LISTS                                                               #
 ###############################################################################
