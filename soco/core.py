@@ -1020,8 +1020,9 @@ class SoCo(_SocoSingletonBase):
 
         Returns:
         A dictionary containing the following information about the currently
-        playing track: playlist_position, duration, title, artist, album,
-        position and a link to the album art.
+        playing track: didl_track (DidlObject for current track),
+        playlist_position, duration, title, artist, album, position, source
+        and a link to the album art.
 
         If we're unable to return data for a field, we'll return an empty
         string. This can happen for all kinds of reasons so be sure to check
@@ -1040,63 +1041,60 @@ class SoCo(_SocoSingletonBase):
         ])
 
         track = {'title': '', 'artist': '', 'album': '', 'album_art': '',
-                 'position': ''}
+                 'didl_track': None}
         track['playlist_position'] = response['Track']
         track['duration'] = response['TrackDuration']
         track['uri'] = response['TrackURI']
         track['position'] = response['RelTime']
 
-        metadata = response['TrackMetaData']
-        # Store the entire Metadata entry in the track, this can then be
-        # used if needed by the client to restart a given URI
-        track['metadata'] = metadata
-        # Duration seems to be '0:00:00' when listening to radio
-        if metadata != '' and track['duration'] == '0:00:00':
-            metadata = XML.fromstring(really_utf8(metadata))
-            # Try parse trackinfo
-            trackinfo = metadata.findtext('.//{urn:schemas-rinconnetworks-com:'
-                                          'metadata-1-0/}streamContent')
-            index = trackinfo.find(' - ')
+        track_uri = response['TrackURI']
+        if track_uri == '':
+            track['source'] = "NONE"
+        elif re.match(r'^x-file-cifs:', track_uri):
+            track['source'] = "LIBRARY"
+        elif re.match(r'^x-rincon-mp3radio:', track_uri)\
+                or re.match(r'^x-sonosapi-stream:', track_uri):
+            track['source'] = "RADIO"
+        elif re.match(r'^x-rincon-stream:', track_uri):
+            track['source'] = "LINE_IN"
+        elif re.match(r'^x-sonos-htastream:', track_uri):
+            track['source'] = "TV"
+        elif re.match(r'^x-sonos-http:', track_uri):
+            track['source'] = "MUSIC_SERVICE"
+        else: track['source'] = "UNKNOWN"
 
-            if index > -1:
-                track['artist'] = trackinfo[:index]
-                track['title'] = trackinfo[index + 3:]
-            else:
-                # Might find some kind of title anyway in metadata
-                track['title'] = metadata.findtext('.//{http://purl.org/dc/'
-                                                   'elements/1.1/}title')
-                if not track['title']:
-                    _LOG.warning('Could not handle track info: "%s"',
-                                 trackinfo)
-                    track['title'] = trackinfo
+        metadata = response['TrackMetaData']
 
         # If the speaker is playing from the line-in source, querying for track
         # metadata will return "NOT_IMPLEMENTED".
-        elif metadata not in ('', 'NOT_IMPLEMENTED', None):
-            # Track metadata is returned in DIDL-Lite format
-            metadata = XML.fromstring(really_utf8(metadata))
-            md_title = metadata.findtext(
-                './/{http://purl.org/dc/elements/1.1/}title')
-            md_artist = metadata.findtext(
-                './/{http://purl.org/dc/elements/1.1/}creator')
-            md_album = metadata.findtext(
-                './/{urn:schemas-upnp-org:metadata-1-0/upnp/}album')
+        if metadata not in ('', 'NOT_IMPLEMENTED', None):
+            # parse the metadata as a Didl object
+            trackobj = from_didl_string(metadata)[0]
+            track['didl_track'] = trackobj
 
-            track['title'] = ""
-            if md_title:
-                track['title'] = md_title
-            track['artist'] = ""
-            if md_artist:
-                track['artist'] = md_artist
-            track['album'] = ""
-            if md_album:
-                track['album'] = md_album
+            # get stream content - if it is available, use it for artist and title information
+            streamcontent = getattr(trackobj, 'stream_content')
+            if streamcontent:
+                index = streamcontent.find(' - ')
+                if index > -1:
+                    track['artist'] = streamcontent[:index]
+                    track['title'] = streamcontent[index + 3:]
+                else:
+                    track['title'] = streamcontent
 
-            album_art_url = metadata.findtext(
-                './/{urn:schemas-upnp-org:metadata-1-0/upnp/}albumArtURI')
-            if album_art_url is not None:
-                track['album_art'] = self._build_album_art_full_uri(
-                    album_art_url)
+            else:
+                if getattr(trackobj, 'title'):
+                    track['title'] = trackobj.title
+
+                if getattr(trackobj, 'artist'):
+                    track['artist'] = trackobj.artist
+
+                if getattr(trackobj, 'album'):
+                    track['album'] = trackobj.title
+
+                if getattr(trackobj, 'album_art_uri'):
+                    track['album_art'] = self._build_album_art_full_uri(
+                        trackobj.album_art_uri)
 
         return track
 
