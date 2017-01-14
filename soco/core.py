@@ -1075,7 +1075,7 @@ class SoCo(_SocoSingletonBase):
 
             # get stream content - if it is available, use it for artist and
             # title information
-            streamcontent = getattr(trackobj, 'stream_content')
+            streamcontent = getattr(trackobj, 'stream_content', None)
             if streamcontent:
                 index = streamcontent.find(' - ')
                 if index > -1:
@@ -1083,21 +1083,15 @@ class SoCo(_SocoSingletonBase):
                     track['title'] = streamcontent[index + 3:]
                 else:
                     track['title'] = streamcontent
-
             else:
-                if getattr(trackobj, 'title'):
-                    track['title'] = trackobj.title
+                track['title'] = getattr(trackobj, 'title', '')
+                track['artist'] = getattr(trackobj, 'artist', '') or \
+                    getattr(trackobj, 'creator', '')
 
-                if getattr(trackobj, 'artist'):
-                    track['artist'] = trackobj.artist
-
-                if getattr(trackobj, 'album'):
-                    track['album'] = trackobj.title
-
-                if getattr(trackobj, 'album_art_uri'):
-                    track['album_art'] = self._build_album_art_full_uri(
-                        trackobj.album_art_uri)
-
+            track['album'] = getattr(trackobj, 'album', '')
+            if hasattr(trackobj, 'album_art_uri'):
+                track['album_art'] = self._build_album_art_full_uri(
+                    trackobj.album_art_uri)
         return track
 
     def get_speaker_info(self, refresh=False, timeout=None):
