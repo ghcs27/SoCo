@@ -1061,7 +1061,8 @@ class SoCo(_SocoSingletonBase):
             track['source'] = "TV"
         elif re.match(r'^x-sonos-http:', track_uri):
             track['source'] = "MUSIC_SERVICE"
-        else: track['source'] = "UNKNOWN"
+        else:
+            track['source'] = "UNKNOWN"
 
         metadata = response['TrackMetaData']
 
@@ -1072,7 +1073,8 @@ class SoCo(_SocoSingletonBase):
             trackobj = from_didl_string(metadata)[0]
             track['didl_track'] = trackobj
 
-            # get stream content - if it is available, use it for artist and title information
+            # get stream content - if it is available, use it for artist and
+            # title information
             streamcontent = getattr(trackobj, 'stream_content')
             if streamcontent:
                 index = streamcontent.find(' - ')
