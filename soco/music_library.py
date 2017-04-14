@@ -14,9 +14,11 @@ from . import discovery
 from .data_structures import (
     SearchResult,
     from_didl_string,
+    to_didl_string,
     DidlResource,
     DidlObject,
-    DidlMusicAlbum
+    DidlMusicAlbum,
+    DidlFavorite
 )
 from .exceptions import SoCoUPnPException
 from .utils import url_escape_path, really_unicode, camel_to_underscore
@@ -584,3 +586,59 @@ class MusicLibrary(object):
         """
         result = self.contentDirectory.GetAlbumArtistDisplayOption()
         return result['AlbumArtistDisplayOption']
+
+    def add_object(self, library_object, parent=None):
+        """Add an object to the music library.
+
+        Args:
+            library_object (DidlObject): The object to be added to the library.
+            parent (DidlObject or str, optional): The desired parent of the new
+                object or its item_id. It can also be specified by setting the
+                parent_id of the object.
+
+        Returns:
+            DidlObject: The newly created object.
+        """
+        if parent is None:
+            container_id = library_object.parent_id
+        else:
+            container_id = getattr(parent, 'item_id', parent)
+        response = self.contentDirectory.CreateObject([
+            ('ContainerID', container_id),
+            ('Elements', to_didl_string(library_object))
+        ])
+        return from_didl_string(response['Result'])[0]
+
+    def remove_object(self, library_object):
+        """Remove an object from the music library.
+
+        Args:
+            library_object (DidlObject or str): The object to remove or its
+                item_id.
+
+        Returns:
+            bool: True if succesful, False otherwise.
+        """
+        object_id = getattr(library_object, 'item_id', library_object)
+        return self.contentDirectory.DestroyObject([
+            ('ObjectID', object_id)
+        ])
+
+    def add_sonos_favorite(self, reference, title='', description=''):
+        """Add a Sonos favorite.
+
+        Args:
+            reference (DidlObject): The object the favorite should refer to.
+            title (str, optional): The favorite title. Default is the title of
+                the referenced object.
+            description (str, optional): The favorite description. Default
+                is no description.
+
+        Returns:
+            DidlFavorite: The new favorite.
+        """
+        if not title:
+            title = reference.title
+        favorite = DidlFavorite(title=title, parent_id='FV:2', item_id='',
+                                reference=reference, description=description)
+        return self.add_object(favorite)
