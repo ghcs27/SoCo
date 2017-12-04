@@ -38,6 +38,8 @@ from .utils import really_unicode
 from .xml import (
     XML, ns_tag
 )
+# pylint: disable=protected-access
+from .data_structures_entry import _DIDL_CLASS_TO_CLASS, from_didl_string
 
 
 ###############################################################################
@@ -287,9 +289,8 @@ class DidlResource(object):
 # BASE OBJECTS                                                                #
 ###############################################################################
 
-# a mapping which will be used to look up the relevant class from the
-# DIDL item class
-_DIDL_CLASS_TO_CLASS = {}
+# All Didl classes are registered in the _DIDL_CLASS_TO_CLASS dict from
+# data_structures_entry, to make them available to the from_didl_string method.
 
 
 class DidlMetaClass(type):
