@@ -27,6 +27,7 @@ from .exceptions import (
 )
 from .groups import ZoneGroup
 from .music_library import MusicLibrary
+from .playlists import PlaylistManager
 from .services import (
     DeviceProperties, ContentDirectory, RenderingControl, AVTransport,
     ZoneGroupTopology, AlarmClock, SystemProperties, MusicServices,
@@ -211,6 +212,7 @@ class SoCo(_SocoSingletonBase):
         self.musicServices = MusicServices(self)
 
         self.music_library = MusicLibrary(self)
+        self.playlists = PlaylistManager(self)
 
         # Some private attributes
         self._all_zones = set()
