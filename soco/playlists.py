@@ -13,6 +13,7 @@ from .data_structures import (
     DidlPlaylistContainer
 )
 from .data_structures import to_didl_string
+from .exceptions import SoCoSlaveException
 
 
 class PlaylistManager(object):
@@ -88,6 +89,12 @@ class PlaylistManager(object):
         # but this has not been tested.  This method is what the
         # controller uses.
         player = player or self.soco
+        if not player.is_coordinator:
+            message = 'The method "{0}" can only be used '\
+                'on the coordinator in a group'.format(
+                    self.create_sonos_playlist_from_queue.__name__)
+            raise SoCoSlaveException(message)
+
         response = player.avTransport.SaveQueue([
             ('InstanceID', 0),
             ('Title', title),
